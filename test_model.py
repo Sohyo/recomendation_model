@@ -61,7 +61,7 @@ class Transformer(nn.Module):
         self.positional_encoder = PositionalEncoding(
             dim_model=dim_model, dropout_p=dropout_p, max_len=5000
         )
-        self.embedding = nn.Embedding(num_tokens, dim_model)
+        self.embedding = nn.Embedding(num_tokens, dim_model, padding_idx=5)
         self.transformer = nn.Transformer(
             d_model=dim_model,
             nhead=num_heads,

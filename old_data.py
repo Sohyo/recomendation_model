@@ -3,9 +3,9 @@ import random
 
 
 def generate_random_data(n):
-    SOS_token = np.array([8])
-    EOS_token = np.array([9])
-    length = 15
+    SOS_token = np.array([2])
+    EOS_token = np.array([3])
+    length = 8
 
     data = []
 
@@ -25,17 +25,14 @@ def generate_random_data(n):
     for i in range(n // 3):
         X = np.zeros(length)
         start = random.randint(0, 1)
+
         X[start::2] = 1
+
         y = np.zeros(length)
         if X[-1] == 0:
             y[::2] = 1
         else:
             y[1::2] = 1
-
-        X = np.concatenate((SOS_token, X, EOS_token))
-        y = np.concatenate((SOS_token, y, EOS_token))
-
-        data.append([X, y])
 
         X = np.concatenate((SOS_token, X, EOS_token))
         y = np.concatenate((SOS_token, y, EOS_token))

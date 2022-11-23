@@ -46,7 +46,7 @@ def per_session_action_sequences(df):
 
 
 class ActionSequenceDataset(Dataset):
-    PAD_token = -1
+    PAD_token = 5
     SOS_token = 3
     EOS_token = 4
 
@@ -72,6 +72,8 @@ class ActionSequenceDataset(Dataset):
         self.action_sequences = per_session_action_sequences(selected_sessions).values()
         self.action_sequences = [[self.action_to_token[action] for action in seq] for seq in self.action_sequences]
         self.action_sequences = [np.asarray(seq, dtype=np.int64) for seq in self.action_sequences]
+
+        print(f"Loaded {len(self.action_sequences)} action sequences.")
 
     def __len__(self):
         return len(self.action_sequences)
@@ -104,11 +106,16 @@ def to_stupid_batches(dataloader):
     return batches
 
 
+def load_dataset_as_stupid_batches(dataset_root_dir, train):
+    ds = ActionSequenceDataset(dataset_root_dir, train=train)
+    dataloader = DataLoader(ds, batch_size=16, shuffle=train)
+    return to_stupid_batches(dataloader)
+
+
 if __name__ == '__main__':
     dataset_root_dir = r"C:\Projects\datasets\otto-recommender-system"
-    ds = ActionSequenceDataset(dataset_root_dir, train=False)
-    dataloader = DataLoader(ds, batch_size=16, shuffle=True)
-    train_dataloader = to_stupid_batches(dataloader)
+    train_dataloader = load_dataset_as_stupid_batches(dataset_root_dir, train=True)
+    test_dataloader = load_dataset_as_stupid_batches(dataset_root_dir, train=False)
 
     for batch in train_dataloader:
         for x, y in batch:

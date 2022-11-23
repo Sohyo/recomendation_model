@@ -1,11 +1,13 @@
 import torch
 import torch.nn as nn
+
+from data.dataset import load_dataset_as_stupid_batches
 from test_model import Transformer
-import data
+
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model = Transformer(
-    num_tokens=4, dim_model=8, num_heads=2, num_encoder_layers=3, num_decoder_layers=3, dropout_p=0.1
+    num_tokens=6, dim_model=8, num_heads=2, num_encoder_layers=3, num_decoder_layers=3, dropout_p=0.1
 ).to(device)
 opt = torch.optim.SGD(model.parameters(), lr=0.01)
 loss_fn = nn.CrossEntropyLoss()
@@ -137,15 +139,21 @@ def predict(model, input_sequence, max_length=15, SOS_token=2, EOS_token=3):
     return y_input.view(-1).tolist()
 
 def main():
-    train_loss_list, validation_loss_list = fit(model, opt, loss_fn, data.train_dataloader, data.val_dataloader, 10)
+    # from old_data import train_dataloader, val_dataloader
+
+    dataset_root_dir = r"C:\Projects\datasets\otto-recommender-system"
+    train_dataloader = load_dataset_as_stupid_batches(dataset_root_dir, train=True)
+    val_dataloader = load_dataset_as_stupid_batches(dataset_root_dir, train=False)
+
+    train_loss_list, validation_loss_list = fit(model, opt, loss_fn, train_dataloader, val_dataloader, 10)
     # Here we test some examples to observe how the model predicts
     examples = [
-        torch.tensor([[2, 0, 0, 0, 0, 0, 0, 0, 0, 3]], dtype=torch.long, device=device),
-        torch.tensor([[2, 1, 1, 0, 1, 1, 0, 1, 1, 3]], dtype=torch.long, device=device),
-        torch.tensor([[2, 1, 1, 1, 1, 1, 1, 1, 0, 3]], dtype=torch.long, device=device),
-        torch.tensor([[2, 0, 0, 0, 0, 0, 1, 0, 1, 3]], dtype=torch.long, device=device),
-        torch.tensor([[2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 3]], dtype=torch.long, device=device),
-        torch.tensor([[2, 0, 1, 3]], dtype=torch.long, device=device)
+        torch.tensor([[3, 0, 0, 0, 0, 0, 0, 0, 0, 4]], dtype=torch.long, device=device),
+        torch.tensor([[3, 1, 1, 0, 1, 1, 0, 1, 1, 4]], dtype=torch.long, device=device),
+        torch.tensor([[3, 1, 1, 1, 1, 1, 1, 1, 0, 4]], dtype=torch.long, device=device),
+        torch.tensor([[3, 0, 0, 0, 0, 0, 1, 0, 1, 4]], dtype=torch.long, device=device),
+        torch.tensor([[3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 4]], dtype=torch.long, device=device),
+        torch.tensor([[3, 0, 1, 4]], dtype=torch.long, device=device)
     ]
 
     for idx, example in enumerate(examples):
