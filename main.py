@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from data.dataset import load_dataset_as_stupid_batches
 from test_model import Transformer
-
+from tqdm import tqdm
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model = Transformer(
@@ -11,6 +11,7 @@ model = Transformer(
 ).to(device)
 opt = torch.optim.SGD(model.parameters(), lr=0.01)
 loss_fn = nn.CrossEntropyLoss()
+# model = torch.load('saved_model.pth')
 
 
 def train_loop(model, opt, loss_fn, dataloader):
@@ -22,7 +23,7 @@ def train_loop(model, opt, loss_fn, dataloader):
     model.train()
     total_loss = 0
 
-    for batch in dataloader:
+    for batch in tqdm(dataloader, 'Train loop', len(dataloader)):
         X, y = batch[:, 0], batch[:, 1]
         X, y = torch.tensor(X).to(device), torch.tensor(y).to(device)
 
@@ -109,7 +110,7 @@ def fit(model, opt, loss_fn, train_dataloader, val_dataloader, epochs):
     return train_loss_list, validation_loss_list
 
 
-def predict(model, input_sequence, max_length=15, SOS_token=2, EOS_token=3):
+def predict(model, input_sequence, max_length=15, SOS_token=3, EOS_token=4):
     """
     Method from "A detailed guide to Pytorch's nn.Transformer() module.", by
     Daniel Melchor: https://medium.com/@danielmelchor/a-detailed-guide-to-pytorchs-nn-transformer-module-c80afbc9ffb1
@@ -138,6 +139,20 @@ def predict(model, input_sequence, max_length=15, SOS_token=2, EOS_token=3):
 
     return y_input.view(-1).tolist()
 
+
+def inference_with_val_data(dataloader):
+    for batch in dataloader:
+        X, y = batch[:, 0], batch[:, 1]
+        X, y = torch.tensor(X, dtype=torch.long, device=device), torch.tensor(y, dtype=torch.long, device=device)
+
+        for single_x, single_y in zip(X, y):
+            result = predict(model, single_x.unsqueeze(0))
+            print(f"Input: {single_x.view(-1).tolist()[1:-1]}")
+            print(f"Continuation: {result[1:-1]}")
+            print(f"Expected continuation: {single_y[1:-1]}")
+        exit()
+
+
 def main():
     # from old_data import train_dataloader, val_dataloader
 
@@ -145,9 +160,12 @@ def main():
     train_dataloader = load_dataset_as_stupid_batches(dataset_root_dir, train=True)
     val_dataloader = load_dataset_as_stupid_batches(dataset_root_dir, train=False)
 
-    train_loss_list, validation_loss_list = fit(model, opt, loss_fn, train_dataloader, val_dataloader, 10)
+    train_loss_list, validation_loss_list = fit(model, opt, loss_fn, train_dataloader, val_dataloader, 5)
     # Here we test some examples to observe how the model predicts
     examples = [
+        torch.tensor([[3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 4]], dtype=torch.long, device=device),
+        torch.tensor([[3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 4]], dtype=torch.long, device=device),
+        torch.tensor([[3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 4]], dtype=torch.long, device=device),
         torch.tensor([[3, 0, 0, 0, 0, 0, 0, 0, 0, 4]], dtype=torch.long, device=device),
         torch.tensor([[3, 1, 1, 0, 1, 1, 0, 1, 1, 4]], dtype=torch.long, device=device),
         torch.tensor([[3, 1, 1, 1, 1, 1, 1, 1, 0, 4]], dtype=torch.long, device=device),
@@ -156,12 +174,15 @@ def main():
         torch.tensor([[3, 0, 1, 4]], dtype=torch.long, device=device)
     ]
 
+    model.eval()
     for idx, example in enumerate(examples):
         result = predict(model, example)
         print(f"Example {idx}")
         print(f"Input: {example.view(-1).tolist()[1:-1]}")
         print(f"Continuation: {result[1:-1]}")
         print()
+
+    torch.save(model, 'saved_model.pth')
 
 
 if __name__ == "__main__":

@@ -72,6 +72,7 @@ class ActionSequenceDataset(Dataset):
         self.action_sequences = per_session_action_sequences(selected_sessions).values()
         self.action_sequences = [[self.action_to_token[action] for action in seq] for seq in self.action_sequences]
         self.action_sequences = [np.asarray(seq, dtype=np.int64) for seq in self.action_sequences]
+        self.action_sequences = [seq for seq in self.action_sequences if 1 in seq or 2 in seq]
 
         print(f"Loaded {len(self.action_sequences)} action sequences.")
 
