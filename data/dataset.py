@@ -83,13 +83,14 @@ class ActionSequenceDataset(Dataset):
         X = action_sequence[:self.sequence_length]
         y = action_sequence[self.sequence_length:]
 
-        # Pad the target
-        if len(y) < self.sequence_length:
-            y = np.concatenate((y, [self.PAD_token] * (self.sequence_length - len(y))))
-
         # Add the start and end tokens
         X = np.concatenate(([self.SOS_token], X, [self.EOS_token]))
         y = np.concatenate(([self.SOS_token], y, [self.EOS_token]))
+
+        # Pad the target
+        if len(y) < (self.sequence_length + 2):
+            y = np.concatenate((y, [self.PAD_token] * ((self.sequence_length + 2) - len(y))))
+
         return X, y
 
 
